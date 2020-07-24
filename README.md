@@ -1,14 +1,14 @@
-Recommendation system tutorial on a sample movies db.
+Recommendation systems tutorial on a sample movies db.
 
-#### libraries
+### libraries
 * pandas
 * numpy
 * warnings
 * matplotlib
 * seaborn
 
-#### code
-
+### code
+#### simple recommender
 ##### import libs
 ```python
 import pandas as pd
@@ -27,7 +27,7 @@ movies = pd.read_csv('./ml-latest-small/movies.csv', sep=',')
 
 ##### processing data
 ```python
-# create dataframe
+# creates dataframe
 df = pd.merge(ratings, movies, on='movieId')
 
 # computes mean rating for every movie
@@ -57,7 +57,7 @@ sns.jointplot(x='rating', y='number_of_ratings', data=rated)
 ```
 ![png](img/output_10_1.png)
 
-##### exploiting data
+##### exploiting correlation data
 ```python
 # rating by user for every movie matrix
 movie_matrix = df.pivot_table(index='userId', columns='title', values='rating')
@@ -77,3 +77,33 @@ corr_forrest_gump = corr_forrest_gump.join(rated['number_of_ratings'])
 corr_forrest_gump[corr_forrest_gump['number_of_ratings']>50].sort_values('Correlation', ascending=False).head()
 ```
 ![png](img/output_11_1.png)
+
+##### exploiting score data
+```python
+# creates a global average score
+C = rated['rating'].mean()
+
+# identifies required minimum number of ratings
+m = rated['number_of_ratings'].quantile(0.90)
+
+# identifies qualified movies
+q_movies = rated.copy().loc[rated['number_of_ratings'] >= m]
+
+# creates function that computes the weighted rating of each movie
+def weighted_rating(x, m=m, c=c):
+    v = x['number_of_ratings']
+    R = x['rating']
+    # based on the IMDB formula
+    return (v/(v+m) * R) + (m/(m+v) * c)
+
+# applies it for new score column on qualified movies
+q_movies['score'] = q_movies.apply(weighted_rating, axis=1)
+
+# sorts on score
+q_movies = q_movies.sort_values('score', ascending=False)
+```
+![png](img/output_12_1.png)
+
+#### content-based recommender
+
+#### collaborative filtering recommender
