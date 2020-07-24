@@ -90,11 +90,11 @@ m = rated['number_of_ratings'].quantile(0.90)
 q_movies = rated.copy().loc[rated['number_of_ratings'] >= m]
 
 # creates function that computes the weighted rating of each movie
-def weighted_rating(x, m=m, c=c):
+def weighted_rating(x, m=m, C=C):
     v = x['number_of_ratings']
     R = x['rating']
     # based on the IMDB formula
-    return (v/(v+m) * R) + (m/(m+v) * c)
+    return (v/(v+m) * R) + (m/(m+v) * C)
 
 # applies it for new score column on qualified movies
 q_movies['score'] = q_movies.apply(weighted_rating, axis=1)
