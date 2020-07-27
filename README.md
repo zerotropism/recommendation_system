@@ -21,8 +21,8 @@ warnings.filterwarnings('ignore')
 
 ##### import data
 ```python
-ratings = pd.read_csv('./ml-latest-small/ratings.csv', sep=',')
-movies = pd.read_csv('./ml-latest-small/movies.csv', sep=',')
+ratings = pd.read_csv('./src/ratings.csv', sep=',')
+movies = pd.read_csv('./src/movies.csv', sep=',')
 ```
 
 ##### processing data
@@ -57,28 +57,7 @@ sns.jointplot(x='rating', y='number_of_ratings', data=rated)
 ```
 ![png](img/output_10_1.png)
 
-##### exploiting correlation data
-```python
-# rating by user for every movie matrix
-movie_matrix = df.pivot_table(index='userId', columns='title', values='rating')
-
-# users rating for the movie "Forrest Gump"
-forrest_gump_ratings = movie_matrix['Forrest Gump (1994)']
-
-# pointing movies similar to "Forrest Gump"
-movies_like_forrest_gump = movie_matrix.corrwith(forrest_gump_ratings)
-corr_forrest_gump = pd.DataFrame(movies_like_forrest_gump, columns=['Correlation'])
-corr_forrest_gump.dropna(inplace=True)
-
-# joining the number of ratings
-corr_forrest_gump = corr_forrest_gump.join(rated['number_of_ratings'])
-
-# sorted by correlation with more than 50 ratings registered
-corr_forrest_gump[corr_forrest_gump['number_of_ratings']>50].sort_values('Correlation', ascending=False).head()
-```
-![png](img/output_11_1.png)
-
-##### exploiting score data
+##### creating a ranking system
 ```python
 # creates a global average score
 C = rated['rating'].mean()
@@ -102,7 +81,31 @@ q_movies['score'] = q_movies.apply(weighted_rating, axis=1)
 # sorts on score
 q_movies = q_movies.sort_values('score', ascending=False)
 ```
+The score provides a base to ranking system.
 ![png](img/output_12_1.png)
+
+##### exploiting correlation data
+```python
+# rating by user for every movie matrix
+movie_matrix = df.pivot_table(index='userId', columns='title', values='rating')
+
+# users rating for the movie "Forrest Gump"
+forrest_gump_ratings = movie_matrix['Forrest Gump (1994)']
+
+# pointing movies similar to "Forrest Gump"
+movies_like_forrest_gump = movie_matrix.corrwith(forrest_gump_ratings)
+corr_forrest_gump = pd.DataFrame(movies_like_forrest_gump, columns=['Correlation'])
+corr_forrest_gump.dropna(inplace=True)
+
+# joining the number of ratings
+corr_forrest_gump = corr_forrest_gump.join(rated['number_of_ratings'])
+
+# sorted by correlation with more than 50 ratings registered
+corr_forrest_gump[corr_forrest_gump['number_of_ratings']>50].sort_values('Correlation', ascending=False).head()
+```
+The correlation provides a way to identify similar movies.
+![png](img/output_11_1.png)
+
 
 #### content-based recommender
 
