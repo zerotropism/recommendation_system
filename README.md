@@ -81,7 +81,7 @@ q_movies['score'] = q_movies.apply(weighted_rating, axis=1)
 # sorts on score
 q_movies = q_movies.sort_values('score', ascending=False)
 ```
-The score provides a base to ranking system.
+the score provides a base to the ranking system.
 ![png](img/output_12_1.png)
 
 ##### exploiting correlation data
@@ -103,7 +103,7 @@ corr_forrest_gump = corr_forrest_gump.join(rated['number_of_ratings'])
 # sorted by correlation with more than 50 ratings registered
 corr_forrest_gump[corr_forrest_gump['number_of_ratings']>50].sort_values('Correlation', ascending=False).head()
 ```
-The correlation provides a way to identify similar movies.
+the correlation provides a way to identify similar movies.
 ![png](img/output_11_1.png)
 
 
