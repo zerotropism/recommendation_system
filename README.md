@@ -58,6 +58,7 @@ sns.jointplot(x='rating', y='number_of_ratings', data=rated)
 ![png](img/output_10_1.png)
 
 ##### creating a ranking system
+the score provides a base to the ranking system.'
 ```python
 # creates a global average score
 C = rated['rating'].mean()
@@ -81,10 +82,10 @@ q_movies['score'] = q_movies.apply(weighted_rating, axis=1)
 # sorts on score
 q_movies = q_movies.sort_values('score', ascending=False)
 ```
-the score provides a base to the ranking system.
 ![png](img/output_12_1.png)
 
 ##### exploiting correlation data
+the correlation provides a way to identify similar movies.
 ```python
 # rating by user for every movie matrix
 movie_matrix = df.pivot_table(index='userId', columns='title', values='rating')
@@ -103,10 +104,66 @@ corr_forrest_gump = corr_forrest_gump.join(rated['number_of_ratings'])
 # sorted by correlation with more than 50 ratings registered
 corr_forrest_gump[corr_forrest_gump['number_of_ratings']>50].sort_values('Correlation', ascending=False).head()
 ```
-the correlation provides a way to identify similar movies.
 ![png](img/output_11_1.png)
 
-
 #### content-based recommender
+##### plot description based recommender
+pairwise cosine similarity scores for all movies based on their plot descriptions.
+```python
+# import data
+metadata = pd.read_csv('./src/movies_metadata.csv', low_memory=False)
+
+# replace NaN with empty string
+metadata['overview'] = metadata['overview'].fillna('')
+```
+computes tf-idf
+```python
+# import function from scikit-learn
+from sklearn.feature_extraction.text import TfidfVectorizer
+
+# define object
+tfidf = TfidfVectorizer(stop_words='english')
+
+# construct matrix
+tfidf_matrix = tfidf.fit_transform(metadata['overview'])
+tfidf_matrix.shape
+```
+45466 movies have 75827 different words & vocabularies.<\n>
+computes cosine similarity with linear_kernel as tf-idf already computed dot products
+```python
+from sklearn.metrics.pairwise import linear_kernel
+cosine_sim = linear_kernel(tfidf_matrix, tfidf_matrix)
+cosine_sim.shape
+```
+top10 similar movies function
+```python
+# identify the index of movie with its name
+indices = pd.Series(metadata.index, index=metadata['title']).drop_duplicates()
+
+# function
+def get_recommendation(title, cosine_sim=cosine_sim):
+    # get the index
+    idx = indices[title]
+    
+    # get the similarity
+    sim_scores = list(enumerate(cosine_sim[idx]))
+    
+    # sort
+    sim_scores = sorted(sim_scores, key=lambda x:x[1], reverse=True)
+    
+    # get scores of top10 without self
+    sim_scores = sim_scores[1:11]
+    
+    # get the indices
+    movie_indices = [i[0] for i in sim_scores]
+    
+    # get top10
+    return metadata['title'].iloc[movie_indices
+```
+finds similar movies by cosine similarity of plot descriptions
+```python
+get_recommendation('The Dark Knight Rises')
+```
+![png](img/output_13_1.png)
 
 #### collaborative filtering recommender
