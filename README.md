@@ -6,6 +6,7 @@ Recommendation systems tutorial on a sample movies db.
 * warnings
 * matplotlib
 * seaborn
+* scikit-learn
 
 ### code
 #### simple recommender
