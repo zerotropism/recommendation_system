@@ -132,14 +132,14 @@ tfidf = TfidfVectorizer(stop_words='english')
 tfidf_matrix = tfidf.fit_transform(metadata['overview'])
 tfidf_matrix.shape
 ```
-Showing that 45,466 movies have 75,827 different words & vocabularies.<\n>
+Showing that 45,466 movies have 75,827 different words & vocabularies.  
 Computes cosine similarity with linear_kernel as tf-idf already computed dot products:
 ```python
 from sklearn.metrics.pairwise import linear_kernel
 cosine_sim = linear_kernel(tfidf_matrix, tfidf_matrix)
 cosine_sim.shape
 ```
-top10 similar movies function
+Top10 similar movies function
 ```python
 # identify the index of movie with its name
 indices = pd.Series(metadata.index, index=metadata['title']).drop_duplicates()
@@ -164,7 +164,7 @@ def get_recommendation(title, cosine_sim=cosine_sim):
     # get top10
     return metadata['title'].iloc[movie_indices
 ```
-finds similar movies by cosine similarity of plot descriptions
+Finds similar movies by cosine similarity of plot descriptions
 ```python
 get_recommendation('The Dark Knight Rises')
 ```
