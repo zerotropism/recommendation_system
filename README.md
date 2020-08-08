@@ -59,7 +59,7 @@ sns.jointplot(x='rating', y='number_of_ratings', data=rated)
 ![png](img/output_10_1.png)
 
 ##### Creating a ranking system
-The score provides a base to the ranking system.'
+The score provides a base to the ranking system.
 ```python
 # creates a global average score
 C = rated['rating'].mean()
@@ -111,7 +111,7 @@ Outputs the top5 sorted list of corresponding movies to the example "Forrest Gum
 
 #### Content-based recommender
 A multi-parameters based recommender.
-##### Plot description based recommender
+##### Plot description
 Pairwise cosine similarity scores for all movies based on their plot descriptions.
 ```python
 # import data
@@ -133,7 +133,7 @@ tfidf_matrix = tfidf.fit_transform(metadata['overview'])
 tfidf_matrix.shape
 ```
 Showing that 45,466 movies have 75,827 different words & vocabularies.  
-Computes cosine similarity with linear_kernel as tf-idf already computed dot products:
+Then computes cosine similarity with linear_kernel as tf-idf already computed dot products:
 ```python
 from sklearn.metrics.pairwise import linear_kernel
 cosine_sim = linear_kernel(tfidf_matrix, tfidf_matrix)
