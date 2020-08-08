@@ -1,6 +1,6 @@
 Recommendation systems tutorial on a sample movies db.
 
-### libraries
+### Libraries
 * pandas
 * numpy
 * warnings
@@ -8,9 +8,9 @@ Recommendation systems tutorial on a sample movies db.
 * seaborn
 * scikit-learn
 
-### code
-#### simple recommender
-##### import libs
+### Code
+#### Simple recommender
+##### Import libs
 ```python
 import pandas as pd
 import numpy as np
@@ -20,13 +20,13 @@ import warnings
 warnings.filterwarnings('ignore')
 ```
 
-##### import data
+##### Import data
 ```python
 ratings = pd.read_csv('./src/ratings.csv', sep=',')
 movies = pd.read_csv('./src/movies.csv', sep=',')
 ```
 
-##### processing data
+##### Processing data
 ```python
 # creates dataframe
 df = pd.merge(ratings, movies, on='movieId')
@@ -38,7 +38,7 @@ rated = pd.DataFrame(df.groupby('title')['rating'].mean())
 rated['number_of_ratings'] = df.groupby('title')['rating'].count()
 ```
 
-##### visualizing data
+##### Visualizing data
 ```python
 # histogram of average ratings
 %matplotlib inline
@@ -58,8 +58,8 @@ sns.jointplot(x='rating', y='number_of_ratings', data=rated)
 ```
 ![png](img/output_10_1.png)
 
-##### creating a ranking system
-the score provides a base to the ranking system.'
+##### Creating a ranking system
+The score provides a base to the ranking system.'
 ```python
 # creates a global average score
 C = rated['rating'].mean()
@@ -83,10 +83,11 @@ q_movies['score'] = q_movies.apply(weighted_rating, axis=1)
 # sorts on score
 q_movies = q_movies.sort_values('score', ascending=False)
 ```
+Outputs the top15 sorted list of movies by score (a weighted rating according to the IMDB formula):
 ![png](img/output_12_1.png)
 
-##### exploiting correlation data
-the correlation provides a way to identify similar movies.
+##### Exploiting correlation data
+The correlation provides a way to identify similar movies.
 ```python
 # rating by user for every movie matrix
 movie_matrix = df.pivot_table(index='userId', columns='title', values='rating')
@@ -105,11 +106,13 @@ corr_forrest_gump = corr_forrest_gump.join(rated['number_of_ratings'])
 # sorted by correlation with more than 50 ratings registered
 corr_forrest_gump[corr_forrest_gump['number_of_ratings']>50].sort_values('Correlation', ascending=False).head()
 ```
+Outputs the top5 sorted list of corresponding movies to the example "Forrest Gump (1994)" by correlation with more than 50 ratings registered:
 ![png](img/output_11_1.png)
 
-#### content-based recommender
-##### plot description based recommender
-pairwise cosine similarity scores for all movies based on their plot descriptions.
+#### Content-based recommender
+A multi-parameters based recommender.
+##### Plot description based recommender
+Pairwise cosine similarity scores for all movies based on their plot descriptions.
 ```python
 # import data
 metadata = pd.read_csv('./src/movies_metadata.csv', low_memory=False)
@@ -117,7 +120,7 @@ metadata = pd.read_csv('./src/movies_metadata.csv', low_memory=False)
 # replace NaN with empty string
 metadata['overview'] = metadata['overview'].fillna('')
 ```
-computes tf-idf
+Computes tf-idf
 ```python
 # import function from scikit-learn
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -129,8 +132,8 @@ tfidf = TfidfVectorizer(stop_words='english')
 tfidf_matrix = tfidf.fit_transform(metadata['overview'])
 tfidf_matrix.shape
 ```
-45466 movies have 75827 different words & vocabularies.<\n>
-computes cosine similarity with linear_kernel as tf-idf already computed dot products
+Showing that 45,466 movies have 75,827 different words & vocabularies.<\n>
+Computes cosine similarity with linear_kernel as tf-idf already computed dot products:
 ```python
 from sklearn.metrics.pairwise import linear_kernel
 cosine_sim = linear_kernel(tfidf_matrix, tfidf_matrix)
@@ -165,6 +168,115 @@ finds similar movies by cosine similarity of plot descriptions
 ```python
 get_recommendation('The Dark Knight Rises')
 ```
+Outputs the top10 sorted list of corresponding movies to the example "The Dark Knight Rises" by cosine similarity on their overview:
 ![png](img/output_13_1.png)
 
-#### collaborative filtering recommender
+#### Enriched content based recommender
+Increases the number of metadata used : the 3 top actors, the director, related genres, and the movie plot keywords.
+
+```python
+# imports data
+credits = pd.read_csv('./src/small_credits.csv')
+keywords = pd.read_csv('./src/keywords.csv')
+
+# removes rows with bad IDs - some dates would raise a ValueError on conversion to int type otherwise
+metadata = metadata.drop([19730, 29503, 35587])
+
+# converts ids to int for proper merging
+keywords['id'] = keywords['id'].astype('int')
+credits['id'] = credits['id'].astype('int')
+metadata['id'] = metadata['id'].astype('int')
+
+# merges new data to dataframe
+metadata = metadata.merge(credits, on='id')
+metadata = metadata.merge(keywords, on='id')
+
+# converts stringified data to exploitable python objects
+from ast import literal_eval
+features = ['cast', 'crew', 'keywords', 'genres']
+for feature in features:
+    metadata[feature] = metadata[feature].apply(literal_eval)
+
+# function to get director name from crew features, if not listed return NaN
+def get_director(x):
+    for i in x:
+        if i['job'] == 'Director':
+            return i['name']
+        return np.nan
+
+# function to get top3 of cast, keywords & genres
+def get_list(x):
+    if isinstance(x, list):
+        names = [i['name'] for i in x]
+        # returns top3 only
+        if len(names) > 3:
+            names = names[:3]
+        return names
+    # returns emply list if missing data
+    return []
+
+# applies last 2 functions
+metadata['director'] = metadata['crew'].apply(get_director)
+
+features = ['cast', 'keywords', 'genres']
+for feature in features:
+    metadata[feature] = metadata[feature].apply(get_list)
+
+# function to convert names & keywords to lowercase+spaceless to better feed the vectorizer
+def clean_data(x):
+    if isinstance(x, list):
+        return [str.lower(i.replace(" ", "")) for i in x]
+    else:
+        # return empty string if director does not exist
+        if isinstance(x, str):
+            return str.lower(x.replace(" ", ""))
+        else:
+            return ''
+
+# applies last function
+features = ['cast', 'keywords', 'director', 'genres']
+for feature in features:
+    metadata[feature] = metadata[feature].apply(clean_data)
+
+# function to create metadata soup to feed vectorizer
+def create_soup(x):
+    return (
+        ' '.join(x['keywords'])
+        + ' '
+        + ' '.join(x['cast'])
+        + ' '
+        + ' '.join(x['director'])
+        + ' '
+        + ' '.join(x['genres'])
+    )
+
+# creates new soup feature
+metadata['soup'] = metadata.apply(create_soup, axis=1)
+```
+
+##### Plot description
+Uses CountVector() instead of TF-IDF to avoid down-weight of the actor/director's presence through IDF component.
+
+```python
+# import CountVectorizer and create the count matrix
+from sklearn.feature_extraction.text import CountVectorizer
+
+count = CountVectorizer(stop_words='english')
+count_matrix = count.fit_transform(metadata['soup'])
+```
+Showing that 58,204 vocabularies from the metadata dataset were fed to CountVector() function
+
+```python
+# cosine similarity
+from sklearn.metrics.pairwise import cosine_similarity
+cosine_sim2 = cosine_similarity(count_matrix, count_matrix)
+
+# reset index & reverse mapping
+metadata = metadata.reset_index()
+indices = pd.Series(metadata.index, index=metadata['title'])
+
+# application
+get_recommendation('The Godfather', cosine_sim2)
+```
+Outputs the top10 sorted list of corresponding movies to the example "The Godfather" by cosine similarity on overviews, cast, keywords, director & genres:
+![png](img/output_14_1.png)
