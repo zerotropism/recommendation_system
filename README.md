@@ -162,7 +162,7 @@ def get_recommendation(title, cosine_sim=cosine_sim):
     movie_indices = [i[0] for i in sim_scores]
     
     # get top10
-    return metadata['title'].iloc[movie_indices
+    return metadata['title'].iloc[movie_indices]
 ```
 Finds similar movies by cosine similarity of plot descriptions
 ```python
